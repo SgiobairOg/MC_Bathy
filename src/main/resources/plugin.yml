@@ -1,0 +1,7 @@
+name: MC_Bathy
+main: io.github.sgiobairog.mc_bathy.main.main
+version: 0.0.1
+commands:
+  bathy:
+    description: Set of methods for loading bathyscapes into Minecraft
+    usage: /bathy 
