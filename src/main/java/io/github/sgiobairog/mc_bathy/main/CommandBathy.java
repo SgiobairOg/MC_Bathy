@@ -2,15 +2,14 @@ package io.github.sgiobairog.mc_bathy.main;
 
 import io.github.sgiobairog.mc_bathy.main.main;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Scanner;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -54,7 +53,15 @@ public class CommandBathy implements CommandExecutor {
 			
 			case "b": case "build":
 				bathyName = args[1];
-				return preLoadBathyBuild(dir, player, bathyName);
+				try {
+					preLoadBathyBuild(dir, player, bathyName);
+					return true;
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return false;
+				}
+				
 				
 			default:
 				player.sendMessage("An unspecified error occured.");
@@ -62,22 +69,20 @@ public class CommandBathy implements CommandExecutor {
 		}
 	}
 	
-	public Boolean preLoadBathyBuild(File dir, Player player, String bathyName) {
+	public void preLoadBathyBuild(File dir, Player player, String bathyName) throws IOException {
 		player.sendMessage("Pre-loading " + bathyName + "...");
 		player.sendMessage("You will be prompted to confirm your actions once we know what you just asked for.");
-		
+
+        FileInputStream inStream = null;
+        Scanner sc = null;
+        
 		try {
 
-            // Define bathy file.
-            File fileIn = new File(dir.getPath() + "/" + bathyName);
-
-            // Setup BufferedReader
-            BufferedReader br = new BufferedReader(new FileReader(fileIn));
-
-            // Read line by line
-            String line = null;
-
-            while ((line = br.readLine()) != null) {
+			inStream = new FileInputStream(dir.getPath() + "/" + bathyName);
+			sc = new Scanner(inStream, "UTF-8");
+			
+            while (sc.hasNextLine()) {
+            	String line = sc.nextLine();
                 String[] coords = line.split(",");
                 Double x = Double.parseDouble(coords[0]);
                 Double y = Double.parseDouble(coords[2]);
@@ -90,7 +95,6 @@ public class CommandBathy implements CommandExecutor {
                 yMin = z < yMin ? z : yMin;
                 zMin = z < zMin ? z : zMin;
                 
-                cells.add( gridHash(x, y, z));
             }
             
             xSpan = xMax - xMin;
@@ -103,15 +107,17 @@ public class CommandBathy implements CommandExecutor {
             player.sendMessage("This action will replace an area of " + xSpan + " x " + ySpan + " x " + zSpan + " blocks and cannot be undone.");
             player.sendMessage("To confirm this action and loa the bathy to the world enter '/bathy confirm'");
             
-            br.close();
-            return true;
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
+            if (sc.ioException() != null) {
+    			throw sc.ioException();
+    		}
+            
+        } finally {
+        	if (inStream != null) {
+        		inStream.close();
+        	}
+        	if (sc != null) {
+        		sc.close();
+        	}
         }
 	}
 	
